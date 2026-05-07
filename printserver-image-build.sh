@@ -45,7 +45,16 @@ log() { echo "[$(date '+%H:%M:%S')] $*"; }
 die() { echo "ERROR: $*" >&2; exit 1; }
 
 FORCE=false
-[[ "${1:-}" == "--force" ]] && FORCE=true
+for _arg in "$@"; do
+  case "$_arg" in
+    --force) FORCE=true ;;
+    --help|-h)
+      sed -n '/^# ={10}/,/^# ={10}/p' "$0" | sed 's/^# \{0,1\}//' | head -n -1
+      exit 0
+      ;;
+    *) die "Unknown argument: $_arg" ;;
+  esac
+done
 
 # ── Validate ──────────────────────────────────────────────────────────────────
 [[ -z "${INCUS_REMOTE:-}" ]] && die "INCUS_REMOTE is not set in $ENV_FILE"
@@ -106,19 +115,22 @@ incus exec "$BUILDER_NAME" -- bash -c '
   apt-get upgrade -y -q
   apt-get install -y -q \
     cups \
-    cups-client \
+    cups-bsd \
     cups-filters \
-    printer-driver-all \
+    printer-driver-gutenprint \
     avahi-daemon \
-    libnss-mdns \
     usbutils \
     linux-tools-common \
     linux-tools-generic \
+    ufw \
     nginx \
-    certbot \
-    python3-certbot-nginx
+    python3-venv
   apt-get clean
   rm -rf /var/lib/apt/lists/*
+  # certbot + Namecheap DNS-01 plugin in a venv (not packaged in Ubuntu apt)
+  python3 -m venv /opt/certbot
+  /opt/certbot/bin/pip install --quiet --upgrade pip certbot certbot-dns-namecheap
+  ln -sf /opt/certbot/bin/certbot /usr/local/bin/certbot
 '
 log "Packages installed."
 
