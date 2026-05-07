@@ -1,0 +1,12 @@
+c2afd538d66fdd77377d03f1ed2ac76a34f1c116baecc9a8170d68f833121f57 *ubuntu-26.04-desktop-arm64.iso
+d31e9b3d01ac0fa8e488d4f8d5a7acfeee869f387674eaedf94335e174155901 *ubuntu-26.04-live-server-arm64+largemem.iso
+c9aa567e6560b2eddae3af03fc686002e35b6fee96f97fd5df3271e846439fdd *ubuntu-26.04-live-server-arm64.iso
+0e9f326f55dcc4244f15336ca1221e6d2f36722a4954fc544570da0a12067c3e *ubuntu-26.04-live-server-ppc64el.iso
+82afc6b53c1009d6359017bc9522858670942746e8522d0d6ec951af828b919e *ubuntu-26.04-live-server-riscv64.iso
+d9da688f07bf7a32eba43ba517ce0d4ad19457163fc1f25ddd0d9c6b9dc29632 *ubuntu-26.04-live-server-s390x.iso
+c8b5d454baf26c6ed3f2a211cdd80183671aed8b67a92817cf5750e02da7f6a6 *ubuntu-26.04-preinstalled-desktop-arm64+raspi.img.xz
+17e3699da18dce8f91cdfef2cf4346d9b5c2d0a30e69fde3d3f0dec92490d1c8 *ubuntu-26.04-preinstalled-server-amd64.img.xz
+10604098a0c4eeb7359e58e12b01badbce8c74b0d53b414e633ba0b047b512cd *ubuntu-26.04-preinstalled-server-arm64+raspi.img.xz
+aaa7431beb07aded27664c11c913a66b1764b54538967dfb8d2b3b34d961dd7e *ubuntu-26.04-preinstalled-server-arm64.img.xz
+42210dc700bd7967e7fe294f60d8ee643b27e5870b8f49a4d710155485258aae *ubuntu-26.04-preinstalled-server-riscv64.img.xz
+9fae7b65ac7be0ebb019987c922f1f1f1aaffb061834eb22e76a5e2a958dd3f6 *ubuntu-26.04-wsl-arm64.wsl

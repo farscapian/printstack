@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ssh redantsle *)",
+      "Bash(incus remote *)",
+      "Bash(incus exec *)",
+      "Bash(awk '/cat *)",
+      "Bash(grep -n '\\\\$[^\\\\\\\\{]')",
+      "Bash(grep -v '\\\\\\\\$')",
+      "Bash(grep -n 'usbip-attach-all\\\\|HOST=\\\\|busids\\\\|$busid\\\\|$HOST' /home/derek/Sync/mini_projects/immutable_print_server_w_usbproxy/printserver-bootstrap.sh)",
+      "Bash(grep -n *)",
+      "Bash(awk 'NR>=248 && NR<=540' /home/derek/Sync/mini_projects/immutable_print_server_w_usbproxy/printserver-bootstrap.sh)",
+      "Bash(chmod +x /home/derek/Sync/mini_projects/immutable_print_server_w_usbproxy/printserver-image-build.sh)",
+      "Bash(bash -n /home/derek/Sync/mini_projects/immutable_print_server_w_usbproxy/printserver-image-build.sh)",
+      "Bash(bash -n /home/derek/Sync/mini_projects/immutable_print_server_w_usbproxy/printserver-bootstrap.sh)"
+    ]
+  }
+}

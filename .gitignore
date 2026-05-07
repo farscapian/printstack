@@ -1,0 +1,13 @@
+# Secrets
+*.env
+!*.env.example# Secrets
+*.env
+!*.env.example
+shared.env
+
+# Ubuntu Pi images (large binary files)
+*.img
+*.img.xz
+
+# Generated cloud-init output (rendered from templates by bootstrap scripts)
+cloud-init/*
