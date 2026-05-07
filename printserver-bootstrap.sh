@@ -113,7 +113,12 @@ USBPROXY_HOST="${USBPROXY_HOST:-usbproxy.ancapistan.io}"
 IMAGE="${INCUS_IMAGE:-local:printserver-base}"
 ENABLE_LETSENCRYPT="${ENABLE_LETSENCRYPT:-false}"
 LE_EMAIL="${LE_EMAIL:-}"
+NAMECHEAP_API_USER="${NAMECHEAP_API_USER:-}"
+NAMECHEAP_API_KEY="${NAMECHEAP_API_KEY:-}"
+NAMECHEAP_CLIENT_IP="${NAMECHEAP_CLIENT_IP:-}"
 LE_VOLUME_NAME="printserver-letsencrypt"
+SSH_CIDRS="${SSH_CIDRS:-}"
+PRINT_CIDRS="${PRINT_CIDRS:-${LAN_SUBNET}}"
 
 # Build YAML-formatted pubkey list for cloud-init (6-space indent)
 SSH_PUBKEYS_YAML=""
@@ -123,12 +128,44 @@ while IFS= read -r key; do
 done <<< "$SSH_PUBKEYS"
 SSH_PUBKEYS_YAML="${SSH_PUBKEYS_YAML%$'\n'}"
 
+# Build CUPS Allow from lines — two indent levels needed:
+#   CUPS_ALLOW_LOCATION: 8-space indent for <Location> blocks
+#   CUPS_ALLOW_LIMIT:   10-space indent for <Limit> blocks inside <Policy>
+# Both are referenced at column 0 in the heredoc so bash expands all lines
+# with the correct indent already embedded in the variable content.
+CUPS_ALLOW_LOCATION=""
+CUPS_ALLOW_LIMIT=""
+for _cidr in $PRINT_CIDRS; do
+  CUPS_ALLOW_LOCATION+="        Allow from ${_cidr}"$'\n'
+  CUPS_ALLOW_LIMIT+="          Allow from ${_cidr}"$'\n'
+done
+CUPS_ALLOW_LOCATION="${CUPS_ALLOW_LOCATION%$'\n'}"
+CUPS_ALLOW_LIMIT="${CUPS_ALLOW_LIMIT%$'\n'}"
+
+# Build UFW rules for cloud-init from CIDR lists
+UFW_PRINT_RULES=""
+for _cidr in $PRINT_CIDRS; do
+  UFW_PRINT_RULES+="  - ufw allow from '${_cidr}' to any port 631 proto tcp"$'\n'
+done
+if [[ -z "$SSH_CIDRS" ]]; then
+  UFW_SSH_RULES="  - ufw allow OpenSSH"$'\n'
+else
+  UFW_SSH_RULES=""
+  for _cidr in $SSH_CIDRS; do
+    UFW_SSH_RULES+="  - ufw allow from '${_cidr}' to any port 22 proto tcp"$'\n'
+  done
+fi
+UFW_PRINT_RULES="${UFW_PRINT_RULES%$'\n'}"
+UFW_SSH_RULES="${UFW_SSH_RULES%$'\n'}"
+
 # ── Validation ────────────────────────────────────────────────────────────────
 [[ -z "$SSH_PUBKEYS" ]] && { echo "ERROR: SSH_PUBKEYS is not set in $SHARED_ENV" >&2; exit 1; }
 
-if [[ "$ENABLE_LETSENCRYPT" == "true" && -z "$LE_EMAIL" ]]; then
-  echo "ERROR: LE_EMAIL must be set in $ENV_FILE when ENABLE_LETSENCRYPT=true" >&2
-  exit 1
+if [[ "$ENABLE_LETSENCRYPT" == "true" ]]; then
+  [[ -z "$LE_EMAIL" ]]             && { echo "ERROR: LE_EMAIL must be set in $ENV_FILE when ENABLE_LETSENCRYPT=true" >&2; exit 1; }
+  [[ -z "$NAMECHEAP_API_USER" ]]  && { echo "ERROR: NAMECHEAP_API_USER must be set in $ENV_FILE when ENABLE_LETSENCRYPT=true" >&2; exit 1; }
+  [[ -z "$NAMECHEAP_API_KEY" ]]   && { echo "ERROR: NAMECHEAP_API_KEY must be set in $ENV_FILE when ENABLE_LETSENCRYPT=true" >&2; exit 1; }
+  [[ -z "$NAMECHEAP_CLIENT_IP" ]] && { echo "ERROR: NAMECHEAP_CLIENT_IP must be set in $ENV_FILE when ENABLE_LETSENCRYPT=true" >&2; exit 1; }
 fi
 
 if [[ -z "${INCUS_REMOTE:-}" ]]; then
@@ -176,9 +213,14 @@ if [[ "$PREV_REMOTE" != "$INCUS_REMOTE" ]]; then
 fi
 log "Using Incus remote: ${INCUS_REMOTE}"
 
-# Verify the base image exists — it must be built with printserver-image-build.sh first.
+# Verify the base image exists; if not, build it automatically.
 if ! incus image info "$IMAGE" &>/dev/null; then
-  die "Base image '${IMAGE}' not found on ${INCUS_REMOTE}. Run ./printserver-image-build.sh first."
+  log "Base image '${IMAGE}' not found — invoking printserver-image-build.sh..."
+  if [[ -x "${SCRIPT_DIR}/printserver-image-build.sh" ]]; then
+    "${SCRIPT_DIR}/printserver-image-build.sh"
+  else
+    die "Base image '${IMAGE}' not found and ${SCRIPT_DIR}/printserver-image-build.sh is missing or not executable."
+  fi
 fi
 
 # ── Phase 2: Stop nightly timer and delete existing container (reprovision) ───
@@ -413,13 +455,13 @@ fi)
       <Location />
         Order allow,deny
         Allow from 127.0.0.1
-        Allow from ${LAN_SUBNET}
+${CUPS_ALLOW_LOCATION}
       </Location>
 
       <Location /admin>
         Order allow,deny
         Allow from 127.0.0.1
-        Allow from ${LAN_SUBNET}
+${CUPS_ALLOW_LOCATION}
       </Location>
 
       <Location /admin/conf>
@@ -427,7 +469,7 @@ fi)
         Require user @SYSTEM
         Order allow,deny
         Allow from 127.0.0.1
-        Allow from ${LAN_SUBNET}
+${CUPS_ALLOW_LOCATION}
       </Location>
 
       <Policy default>
@@ -437,51 +479,47 @@ fi)
         SubscriptionPrivateValues default
         <Limit Create-Job Print-Job Print-URI Validate-Job>
           Order allow,deny
-          Allow from ${LAN_SUBNET}
+${CUPS_ALLOW_LIMIT}
         </Limit>
         <Limit Send-Document Send-URI Hold-Job Release-Job Restart-Job Purge-Jobs Set-Job-Attributes Create-Job-Subscriptions Renew-Subscription Cancel-Subscription Get-Notifications Reprocess-Job Cancel-Current-Job Suspend-Current-Job Resume-Job Cancel-My-Jobs Close-Job CUPS-Move-Job CUPS-Get-Document>
           Require user @OWNER @SYSTEM
           Order allow,deny
-          Allow from ${LAN_SUBNET}
+${CUPS_ALLOW_LIMIT}
         </Limit>
         <Limit CUPS-Add-Modify-Printer CUPS-Delete-Printer CUPS-Add-Modify-Class CUPS-Delete-Class CUPS-Set-Default CUPS-Get-Devices>
           AuthType Default
           Require user @SYSTEM
           Order allow,deny
-          Allow from ${LAN_SUBNET}
+${CUPS_ALLOW_LIMIT}
         </Limit>
         <Limit Pause-Printer Resume-Printer Enable-Printer Disable-Printer Pause-Printer-After-Current-Job Hold-New-Jobs Release-Held-New-Jobs Deactivate-Printer Activate-Printer Restart-Printer Shutdown-Printer Startup-Printer Promote-Job Schedule-Job-After CUPS-Accept-Jobs CUPS-Reject-Jobs>
           AuthType Default
           Require user @SYSTEM
           Order allow,deny
-          Allow from ${LAN_SUBNET}
+${CUPS_ALLOW_LIMIT}
         </Limit>
         <Limit Cancel-Job CUPS-Authenticate-Job>
           Require user @OWNER @SYSTEM
           Order allow,deny
-          Allow from ${LAN_SUBNET}
+${CUPS_ALLOW_LIMIT}
         </Limit>
         <Limit All>
           Order allow,deny
-          Allow from ${LAN_SUBNET}
+${CUPS_ALLOW_LIMIT}
         </Limit>
       </Policy>
     owner: root:root
     permissions: '0640'
 
 $(if [[ "$ENABLE_LETSENCRYPT" == "true" ]]; then cat <<LEEOF
-  # nginx: HTTP — serves ACME webroot challenges, redirects everything else to HTTPS
-  - path: /etc/nginx/sites-available/cups-http
+  # Namecheap DNS-01 credentials for certbot (DNS-01 requires no open ports)
+  - path: /etc/ssl/certbot-namecheap.ini
     content: |
-      server {
-          listen 80;
-          server_name ${CONTAINER_FQDN};
-          root /var/www/certbot;
-          location /.well-known/acme-challenge/ {}
-          location / { return 301 https://\$host\$request_uri; }
-      }
+      certbot_dns_namecheap:dns_namecheap_username = ${NAMECHEAP_API_USER}
+      certbot_dns_namecheap:dns_namecheap_api_key = ${NAMECHEAP_API_KEY}
+      certbot_dns_namecheap:dns_namecheap_client_ip = ${NAMECHEAP_CLIENT_IP}
     owner: root:root
-    permissions: '0644'
+    permissions: '0600'
 
   # nginx: HTTPS — TLS termination + reverse proxy to CUPS on localhost
   - path: /etc/nginx/sites-available/cups-ssl
@@ -625,22 +663,27 @@ runcmd:
   - usermod -aG lpadmin ubuntu
   - systemctl restart cups
 $(if [[ "$ENABLE_LETSENCRYPT" == "true" ]]; then cat <<LEEOF
-  # ── nginx + Let's Encrypt ─────────────────────────────────────────────────
-  - mkdir -p /var/www/certbot
+  # ── nginx + Let's Encrypt (DNS-01 / Namecheap) ─────────────────────────────
+  # DNS-01 validates via the Namecheap XML API — no open inbound ports needed.
   - rm -f /etc/nginx/sites-enabled/default
-  - ln -sf /etc/nginx/sites-available/cups-http /etc/nginx/sites-enabled/cups-http
-  - systemctl enable nginx
-  - systemctl start nginx
-  # Issue cert on first provision; skip if cert already exists on persistent volume
+  # Issue cert if not already present on the persistent certificate volume
   - |
     if [[ ! -f /etc/letsencrypt/live/${CONTAINER_FQDN}/fullchain.pem ]]; then
-      certbot certonly --webroot --webroot-path /var/www/certbot \
+      certbot certonly --dns-namecheap \
+        --dns-namecheap-credentials /etc/ssl/certbot-namecheap.ini \
         -d ${CONTAINER_FQDN} --email ${LE_EMAIL} --agree-tos --non-interactive
     fi
   - ln -sf /etc/nginx/sites-available/cups-ssl /etc/nginx/sites-enabled/cups-ssl
-  - systemctl reload nginx
+  - systemctl enable nginx
+  - systemctl start nginx
+  - ufw allow 443/tcp
 LEEOF
 fi)
+  # Firewall — idempotent; safe to re-run on every reprovision
+${UFW_PRINT_RULES}
+${UFW_SSH_RULES}
+  - ufw --force enable
+
   # Auto-register USB printers — best-effort; succeeds even if Pi isn't connected yet
   - /usr/local/bin/register-printers || true
 
