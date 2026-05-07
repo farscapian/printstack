@@ -142,6 +142,8 @@ SSH_PUBKEYS="${SSH_PUBKEYS:-}"
 LAN_SUBNET="${LAN_SUBNET:-192.168.4.0/22}"
 USBPROXY_HOST="${USBPROXY_HOST:-usbproxy.ancapistan.io}"
 ENABLE_VIRTUAL_PRINTERS="${ENABLE_VIRTUAL_PRINTERS:-0}"
+SSH_CIDRS="${SSH_CIDRS:-}"
+PRINT_CIDRS="${PRINT_CIDRS:-${LAN_SUBNET}}"
 
 # PI_HOSTNAME defaults to USBPROXY_HOST (they're the same node)
 PI_HOSTNAME="${PI_HOSTNAME:-${USBPROXY_HOST}}"
@@ -153,6 +155,23 @@ while IFS= read -r key; do
   SSH_PUBKEYS_YAML+="      - ${key}"$'\n'
 done <<< "$SSH_PUBKEYS"
 SSH_PUBKEYS_YAML="${SSH_PUBKEYS_YAML%$'\n'}"
+
+# Build UFW rules for cloud-init from CIDR lists
+UFW_PRINT_RULES=""
+for _cidr in $PRINT_CIDRS; do
+  UFW_PRINT_RULES+="  - ufw allow from '${_cidr}' to any port 3240 proto tcp"$'\n'
+done
+if [[ -z "$SSH_CIDRS" ]]; then
+  UFW_SSH_RULES="  - ufw allow OpenSSH"$'\n'
+else
+  UFW_SSH_RULES=""
+  for _cidr in $SSH_CIDRS; do
+    UFW_SSH_RULES+="  - ufw allow from '${_cidr}' to any port 22 proto tcp"$'\n'
+  done
+fi
+# Strip trailing newlines
+UFW_PRINT_RULES="${UFW_PRINT_RULES%$'\n'}"
+UFW_SSH_RULES="${UFW_SSH_RULES%$'\n'}"
 
 # ── Validation ─────────────────────────────────────────────────────────────────
 [[ -z "$SSH_PUBKEYS" ]]       && { echo "ERROR: SSH_PUBKEYS is not set in $SHARED_ENV."  >&2; exit 1; }
@@ -604,8 +623,9 @@ ssh_pwauth: false
 # Network config — written to root filesystem; persists across nightly
 # reprovisioning (cloud-init clean does not wipe rootfs).
 #
-# eth0: DHCP, optional — first boot only. Absent cable must not stall boot.
-# wlan0: DHCP — production interface. Reserve DHCP by wlan0 MAC.
+# eth0: DHCP, primary interface (route-metric 100). Optional so absent cable
+#        never stalls boot; when present it is preferred over wlan0.
+# wlan0: DHCP, secondary interface (route-metric 200). Reserve DHCP by MAC.
 #        DNS: ${PI_HOSTNAME} → wlan0 IP.
 #
 # WPA3-SAE requested; falls back to WPA2-PSK on transition-mode APs.
@@ -623,9 +643,14 @@ write_files:
           eth0:
             dhcp4: true
             optional: true
+            dhcp4-overrides:
+              route-metric: 100
         wifis:
           wlan0:
             dhcp4: true
+            optional: true
+            dhcp4-overrides:
+              route-metric: 200
 $(if [[ -n "${WLAN_MAC}" ]]; then echo "            macaddress: ${WLAN_MAC}"; fi)
             access-points:
               "HomeNet":
@@ -732,9 +757,8 @@ ${SSH_PUBKEYS_YAML}
 ssh_pwauth: false
 
 write_files:
-  # Network config — wlan0 is the sole production interface.
-  # eth0 is marked optional so plugging in a cable during maintenance works
-  # but an absent cable never delays boot or service startup.
+  # Network config — eth0 is primary (route-metric 100, optional), wlan0
+  # is secondary (route-metric 200). When both are up, traffic prefers eth0.
   # This file is NOT written on first boot (the firstboot config handles it);
   # it IS written on every nightly reprovision to ensure it stays correct.
   - path: /etc/netplan/60-network.yaml
@@ -745,9 +769,14 @@ write_files:
           eth0:
             dhcp4: true
             optional: true
+            dhcp4-overrides:
+              route-metric: 100
         wifis:
           wlan0:
             dhcp4: true
+            optional: true
+            dhcp4-overrides:
+              route-metric: 200
 $(if [[ -n "${WLAN_MAC}" ]]; then echo "            macaddress: ${WLAN_MAC}"; fi)
             access-points:
               "HomeNet":
@@ -979,8 +1008,8 @@ fi)
   - systemctl start reprovision.timer
 
   # Firewall — idempotent; safe to re-run on every reprovision
-  - ufw allow from ${LAN_SUBNET} to any port 3240 proto tcp
-  - ufw allow OpenSSH
+${UFW_PRINT_RULES}
+${UFW_SSH_RULES}
   - ufw --force enable
 
 final_message: |
