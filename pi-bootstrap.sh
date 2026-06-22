@@ -28,7 +28,7 @@
 # .env variables (see pi-bootstrap.env.example):
 #   DEVICE          /dev/sdX    SD card block device (required)
 #   WIFI_PASSWORD   <pass>      HomeNet WPA3/WPA2 passphrase (required)
-#   PI_HOSTNAME     <fqdn>      Pi hostname (default: usbproxy.ancapistan.io)
+#   PI_HOSTNAME     <fqdn>      Pi hostname (default: usbproxy.printstack.local)
 #
 # Image file:
 #   The script looks for ubuntu-26.04-preinstalled-server-arm64+raspi.img.xz
@@ -140,7 +140,7 @@ set -u
 # Apply shared.env defaults
 SSH_PUBKEYS="${SSH_PUBKEYS:-}"
 LAN_SUBNET="${LAN_SUBNET:-192.168.4.0/22}"
-USBPROXY_HOST="${USBPROXY_HOST:-usbproxy.ancapistan.io}"
+USBPROXY_HOST="${USBPROXY_HOST:-usbproxy.printstack.local}"
 ENABLE_VIRTUAL_PRINTERS="${ENABLE_VIRTUAL_PRINTERS:-0}"
 SSH_CIDRS="${SSH_CIDRS:-}"
 PRINT_CIDRS="${PRINT_CIDRS:-${LAN_SUBNET}}"

@@ -28,7 +28,7 @@
 | `printserver-bootstrap.env.example` | Printserver-specific config template |
 | `scripts/init_grok_session.sh` | Grok session sync + agent tips |
 | `scripts/init_claude_session.sh` | Claude Code session sync + agent tips |
-| `ai-guidance/nut.md` | `nut` command source + backronym (`~/.bash_aliases`) |
+| `agentstartstack/nut.md` | `nut` command source + backronym (`~/.bash_aliases`) |
 | `README.md` | Human-facing project overview |
 | `CLAUDE.md` | AI agent index |
 

@@ -8,7 +8,7 @@
 
 This applies in code comments, documentation, help text, and all user-facing messages.
 
-Script and hostname names in this repo use their own conventions (`pi-bootstrap`, `printserver-bootstrap`, `usbproxy.ancapistan.io`) -- do not rename these unless explicitly asked.
+Script and hostname names in this repo use their own conventions (`pi-bootstrap`, `printserver-bootstrap`, `usbproxy.printstack.local`) -- do not rename these unless explicitly asked.
 
 ## ASCII-only text
 

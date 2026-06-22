@@ -102,14 +102,14 @@ set -u
 
 # Apply defaults for optional vars
 CONTAINER_HOSTNAME="${CONTAINER_HOSTNAME:-printserver}"
-CONTAINER_FQDN="${CONTAINER_FQDN:-printserver.ancapistan.io}"
+CONTAINER_FQDN="${CONTAINER_FQDN:-printserver.printstack.local}"
 INCUS_STORAGE_POOL="${INCUS_STORAGE_POOL:-incus-pool}"
 PARENT_IFACE="${PARENT_IFACE:-eno1}"
 MAC_ADDRESS="${MAC_ADDRESS:-3e:db:83:86:db:24}"
 # Shared vars — defaults applied here so printserver-bootstrap.env can override
 SSH_PUBKEYS="${SSH_PUBKEYS:-}"
 LAN_SUBNET="${LAN_SUBNET:-192.168.4.0/22}"
-USBPROXY_HOST="${USBPROXY_HOST:-usbproxy.ancapistan.io}"
+USBPROXY_HOST="${USBPROXY_HOST:-usbproxy.printstack.local}"
 IMAGE="${INCUS_IMAGE:-local:printserver-base}"
 ENABLE_LETSENCRYPT="${ENABLE_LETSENCRYPT:-false}"
 LE_EMAIL="${LE_EMAIL:-}"
@@ -555,7 +555,7 @@ fi)
     content: |
       [server]
       host-name=${CONTAINER_HOSTNAME}
-      domain-name=ancapistan.io
+      domain-name=printstack.local
       use-ipv4=yes
       use-ipv6=no
       allow-interfaces=eth0

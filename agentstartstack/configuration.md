@@ -25,7 +25,7 @@ Loaded by `pi-bootstrap.sh` and `printserver-bootstrap.sh` before their node-spe
 | `LAN_SUBNET` | no | `192.168.4.0/22` | Legacy/fallback CIDR for services |
 | `SSH_CIDRS` | no | (empty = allow any) | Space-separated CIDRs for SSH (port 22) in UFW |
 | `PRINT_CIDRS` | no | `$LAN_SUBNET` | Space-separated CIDRs for CUPS (631) and USB/IP (3240) |
-| `USBPROXY_HOST` | no | `usbproxy.ancapistan.io` | Pi FQDN; used by printserver for `usbip attach` |
+| `USBPROXY_HOST` | no | `usbproxy.printstack.local` | Pi FQDN; used by printserver for `usbip attach` |
 
 **Permissions:** script warns if not `600` or `400`.
 
@@ -53,7 +53,7 @@ Loaded by `pi-bootstrap.sh` and `printserver-bootstrap.sh` before their node-spe
 | `MAC_ADDRESS` | yes | -- | Container eth0 MAC (for DHCP reservation) |
 | `INCUS_IMAGE` | no | `local:printserver-base` | Base image (build with `printserver-image-build.sh`) |
 | `CONTAINER_HOSTNAME` | no | `printserver` | Short hostname |
-| `CONTAINER_FQDN` | no | `printserver.ancapistan.io` | FQDN for CUPS/TLS |
+| `CONTAINER_FQDN` | no | `printserver.printstack.local` | FQDN for CUPS/TLS |
 | `INCUS_STORAGE_POOL` | no | `incus-pool` | Storage pool name |
 | `PARENT_IFACE` | no | `eno1` | Parent NIC for MACVLAN |
 

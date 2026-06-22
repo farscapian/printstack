@@ -81,7 +81,7 @@ git clean -fd
 COMMIT="$(git log -1 --oneline)"
 BRANCH="$(git branch --show-current)"
 ok "Synced to ${BRANCH} @ ${COMMIT}"
-info "Workflow guide: ${REPO_ROOT}/ai-guidance/workflow.md"
+info "Workflow guide: ${REPO_ROOT}/agentstartstack/workflow.md"
 echo ""
 
 cat <<'EOF'
@@ -102,7 +102,7 @@ IMPORTANT: Claude Code always edits files in the session clone (~/.claude/worktr
 FIRST MESSAGE (copy/paste template below)
   - Say you ran init_claude_session.sh (session sync complete).
   - State your task in one sentence.
-  - Name 1-3 ai-guidance files to read (not all of them, not CLAUDE.md in full).
+  - Name 1-3 agentstartstack files to read (not all of them, not CLAUDE.md in full).
 
 WHAT TO READ (pick 1-3 by task type)
   Pi SD flash / WiFi         -> workflow.md, bootstrap.md, gotchas.md
@@ -111,7 +111,7 @@ WHAT TO READ (pick 1-3 by task type)
   Cloud-init / nightly       -> cloud-init.md, features.md, gotchas.md
   TLS / Let's Encrypt        -> features.md, configuration.md, security.md
   New shell script           -> conventions.md, code-quality.md, implementation.md
-  Docs / workflow only       -> workflow.md, ai-guidance/README.md
+  Docs / workflow only       -> workflow.md, agentstartstack/README.md
 
   CLAUDE.md is an index only. Do not ask the agent to "read all of CLAUDE.md".
 
@@ -131,12 +131,12 @@ DO NOT
   - Start a session without session sync (stale clone -> wrong fixes).
   - Edit files under ~/Sync/mini_projects/printstack -- work only in the session clone.
   - Push to origin (git push origin main) -- HUMAN ONLY, never an AI agent.
-  - Re-explain the AI git workflow every time (see ai-guidance/workflow.md).
+  - Re-explain the AI git workflow every time (see agentstartstack/workflow.md).
   - nut while printstack is running: pgrep -af '(printstack\.sh|/printstack) '
   - Run printstack flash against an SD card the human is already flashing.
 
 WHEN HUMAN SAYS "sync"
-  nut push          # or: nut printstack push -- see ai-guidance/nut.md
+  nut push          # or: nut printstack push -- see agentstartstack/nut.md
 
 ================================================================================
 Suggested first message to paste into the agent:
@@ -147,11 +147,11 @@ cat <<EOF
 New session. init_claude_session.sh complete (session sync) -- on main at ${COMMIT}.
 
 Task: <your task in one sentence>
-Read: ai-guidance/workflow.md, ai-guidance/<pick-one-or-two-more>.md
+Read: agentstartstack/workflow.md, agentstartstack/<pick-one-or-two-more>.md
 Constraints: <Pi/Incus host, files not to touch>
 EOF
 
 echo ""
 info "Claude Code session directories: ${CLAUDE_PARENT}/"
 info "Canonical repo:                  ${SYNC_REPO}/"
-info "Full workflow:                ${REPO_ROOT}/ai-guidance/workflow.md"
+info "Full workflow:                ${REPO_ROOT}/agentstartstack/workflow.md"

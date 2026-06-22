@@ -59,8 +59,8 @@ Both nodes use `ufw`. CIDRs come from `shared.env`:
 
 ```
 .
-├── CLAUDE.md                        # AI index (load ai-guidance/ topics)
-├── ai-guidance/                     # Topic-specific agent guidance
+├── CLAUDE.md                        # AI index (load agentstartstack/ topics)
+├── agentstartstack/                     # Topic-specific agent guidance
 ├── printstack.sh                    # CLI entrypoint (flash, refresh)
 ├── scripts/                         # config.sh, create-log.sh, session init
 ├── shared.env.example               # SSH keys, LAN subnet, Pi hostname

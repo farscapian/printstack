@@ -1,4 +1,4 @@
-# ai-guidance
+# agentstartstack
 
 Split from the monolithic project docs so agents load only the topics needed for a task.
 
@@ -29,4 +29,4 @@ Split from the monolithic project docs so agents load only the topics needed for
 
 ## Maintenance
 
-When adding guidance, append to the smallest applicable topic file. Update `CLAUDE.md` index table if adding a new file. Keep cross-references as relative `ai-guidance/*.md` links.
+When adding guidance, append to the smallest applicable topic file. Update `CLAUDE.md` index table if adding a new file. Keep cross-references as relative `agentstartstack/*.md` links.
