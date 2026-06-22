@@ -1,7 +1,5 @@
 # Secrets
 *.env
-!*.env.example# Secrets
-*.env
 !*.env.example
 shared.env
 

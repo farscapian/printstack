@@ -39,6 +39,7 @@ Both nodes reprovision nightly from cloud-init: the container is destroyed and r
 
 ```
 .
+├── printstack.sh                    # CLI entrypoint (flash, refresh)
 ├── shared.env.example               # SSH keys, LAN subnet, Pi hostname (shared by both scripts)
 ├── pi-bootstrap.env.example         # SD card device, WiFi password
 ├── pi-bootstrap.sh                  # Flash SD card and write cloud-init for the Pi
@@ -93,7 +94,8 @@ $EDITOR printserver-bootstrap.env   # INCUS_REMOTE=, MAC_ADDRESS=
 Insert the SD card, identify the device (`lsblk`), then:
 
 ```bash
-sudo ./pi-bootstrap.sh --flash --force
+printstack flash --force
+# or: sudo ./pi-bootstrap.sh --flash --force
 ```
 
 This will:
@@ -124,8 +126,17 @@ Run once before first deployment. Creates a pre-baked Incus image named `printse
 
 ### 4. Provision the print server
 
+First deployment:
+
 ```bash
+./printserver-image-build.sh
 ./printserver-bootstrap.sh
+```
+
+Immutable refresh (rebuild image + destroy/recreate container):
+
+```bash
+printstack refresh
 ```
 
 This will:
