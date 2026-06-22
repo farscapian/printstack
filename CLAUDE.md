@@ -1,6 +1,6 @@
 # printstack -- AI Development Notes (index)
 
-Immutable USB/IP proxy + CUPS print server stack. **Load topic files from `agentstartstack/` instead of reading this index repeatedly.**
+Immutable USB/IP proxy + CUPS print server stack. **Load topic files on demand -- do not read this entire index repeatedly.**
 
 ## Quick rules
 
@@ -8,33 +8,44 @@ Immutable USB/IP proxy + CUPS print server stack. **Load topic files from `agent
 - Text: ASCII-only in docs, logs, help, and code comments
 - Agents work in session clones, NOT in Sync: Grok -> `~/.grok/worktrees/mini-projects-printstack/<session-id>/`; Claude Code -> `~/.claude/worktrees/mini-projects-printstack/<session-id>/`; bootstrap scripts run from `~/Sync/mini_projects/printstack`
 - Claude Code: NEVER edit files under `~/Sync/mini_projects/printstack` -- use absolute paths to your session clone only
-- New Grok session: run `scripts/init_grok_session.sh`; new Claude Code session: run `scripts/init_claude_session.sh` (session sync + agent tips; see `agentstartstack/workflow.md`)
-- After changes: commit in session clone; human runs `nut` then `push` (or `nut push`). NEVER `git push origin` from agents (see `agentstartstack/nut.md`)
+- New Grok session: run `scripts/init_grok_session.sh`; new Claude Code session: run `scripts/init_claude_session.sh` (see `.agentstartstack/agentstartstack/workflow.md`)
+- After changes: commit in session clone; human runs `nut` then `git push origin main` (or `nutup`). NEVER `git push origin` from agents (see `.agentstartstack/agentstartstack/nut.md`)
 - CLI runs from `~/Sync/mini_projects/printstack` via `printstack.sh` (or `~/.local/bin/printstack`)
-- Never `git pull` on Sync or run `printstack` while the human has an active session (see `workflow.md`)
+- Never `nut` or `git pull` on Sync while `printstack` is running (see `agentstartstack/workflow.md`)
 - Secrets live in `*.env` files (gitignored) -- never commit or echo them
-- Integrated terminal (Cursor/Codium): put copy-pasteable commands in chat; see `agentstartstack/terminal.md`
+- Integrated terminal: see `.agentstartstack/agentstartstack/terminal.md`
 
-## Topic index
+## Generic guidance (.agentstartstack submodule)
 
 | File | Load when |
 |------|-----------|
-| [agentstartstack/conventions.md](agentstartstack/conventions.md) | Naming, ASCII-only text, script output tags |
-| [agentstartstack/workflow.md](agentstartstack/workflow.md) | Repos, agent session clones (Grok + Claude Code), git sync, active bootstrap sessions |
-| [agentstartstack/nut.md](agentstartstack/nut.md) | `nut` command -- Newest commit Until Transferred (human Sync handoff) |
+| [.agentstartstack/agentstartstack/workflow.md](.agentstartstack/agentstartstack/workflow.md) | Repos, session clones, git sync |
+| [.agentstartstack/agentstartstack/nut.md](.agentstartstack/agentstartstack/nut.md) | `nut` / `nutup` handoff |
+| [.agentstartstack/agentstartstack/conventions.md](.agentstartstack/agentstartstack/conventions.md) | Naming, ASCII-only, output tags |
+| [.agentstartstack/agentstartstack/terminal.md](.agentstartstack/agentstartstack/terminal.md) | Copy/paste in Cursor/Codium integrated terminal |
+| [.agentstartstack/agentstartstack/security.md](.agentstartstack/agentstartstack/security.md) | Never print secrets (generic) |
+| [.agentstartstack/agentstartstack/code-quality.md](.agentstartstack/agentstartstack/code-quality.md) | shellcheck, git hooks |
+| [.agentstartstack/agentstartstack/implementation.md](.agentstartstack/agentstartstack/implementation.md) | Common shell patterns |
+| [.agentstartstack/agentstartstack/testing.md](.agentstartstack/agentstartstack/testing.md) | Generic pre-handoff checks |
+
+## Project guidance
+
+| File | Load when |
+|------|-----------|
+| [agentstartstack/workflow.md](agentstartstack/workflow.md) | Active bootstrap sessions, live-run milestones |
 | [agentstartstack/configuration.md](agentstartstack/configuration.md) | `shared.env`, `pi-bootstrap.env`, `printserver-bootstrap.env` |
 | [agentstartstack/architecture.md](agentstartstack/architecture.md) | Two-node USB/IP + CUPS design, nightly reprovisioning, firewall |
-| [agentstartstack/terminal.md](agentstartstack/terminal.md) | Copy/paste in Cursor/Codium integrated terminal |
 | [agentstartstack/cli.md](agentstartstack/cli.md) | `printstack.sh` commands, global flags, session logs |
-| [agentstartstack/bootstrap.md](agentstartstack/bootstrap.md) | `pi-bootstrap.sh`, `printserver-bootstrap.sh`, `printserver-image-build.sh` (wrapped by CLI) |
+| [agentstartstack/bootstrap.md](agentstartstack/bootstrap.md) | `pi-bootstrap.sh`, `printserver-bootstrap.sh`, image build |
 | [agentstartstack/cloud-init.md](agentstartstack/cloud-init.md) | Cloud-init generation, firstboot vs nightly, lpadmin baking |
 | [agentstartstack/features.md](agentstartstack/features.md) | TLS/Let's Encrypt, virtual printers, MACVLAN, CUPS discovery |
 | [agentstartstack/implementation.md](agentstartstack/implementation.md) | Env loading, heredocs, YAML indent variables, trap/cleanup |
-| [agentstartstack/gotchas.md](agentstartstack/gotchas.md) | usbip timing, brcmfmac NVRAM, cloud-init instance-id, package pre-bake |
+| [agentstartstack/gotchas.md](agentstartstack/gotchas.md) | usbip timing, brcmfmac NVRAM, cloud-init instance-id |
 | [agentstartstack/pitfalls.md](agentstartstack/pitfalls.md) | Symptom -> cause -> fix lookup table |
-| [agentstartstack/security.md](agentstartstack/security.md) | Never print secrets; `.env` permissions; API keys |
+| [agentstartstack/security.md](agentstartstack/security.md) | Project secrets, TLS, firewall |
 | [agentstartstack/testing.md](agentstartstack/testing.md) | Pre-handoff validation checklist |
-| [agentstartstack/code-quality.md](agentstartstack/code-quality.md) | shellcheck rules and examples |
 | [agentstartstack/references.md](agentstartstack/references.md) | External docs and key source files |
 
-Full catalog and review notes: [agentstartstack/README.md](agentstartstack/README.md).
+Full catalog: [agentstartstack/README.md](agentstartstack/README.md).
+
+Origin: `git@github.com:farscapian/printstack.git`

@@ -111,14 +111,15 @@ shared.env.example             # Keys, LAN, hostnames
 pi-bootstrap.env.example       # SD card, WiFi, virtual printers
 printserver-bootstrap.env.example
 docs/architecture.svg          # Diagram above
-agentstartstack/                   # Deep docs for contributors and agents
+.agentstartstack/                  # Shared agent workflow submodule (generic guidance)
+agentstartstack/                   # Project-specific agent docs
 ```
 
 ---
 
 ## For developers
 
-Architecture details, bootstrap phases, gotchas, and agent workflow live in [`agentstartstack/`](agentstartstack/README.md). Start with [`architecture.md`](agentstartstack/architecture.md) if you are changing how the pieces fit together.
+Architecture details, bootstrap phases, gotchas, and agent workflow live in [`agentstartstack/`](agentstartstack/README.md) (project) and [`.agentstartstack/`](.agentstartstack/README.md) (shared). Start with [`architecture.md`](agentstartstack/architecture.md) if you are changing how the pieces fit together.
 
 ---
 

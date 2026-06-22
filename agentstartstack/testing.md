@@ -8,7 +8,7 @@ Before requesting human approval or syncing to Sync:
 # Syntax check all scripts
 bash -n pi-bootstrap.sh printserver-bootstrap.sh printserver-image-build.sh
 
-# ShellCheck (see code-quality.md)
+# ShellCheck (see .agentstartstack/agentstartstack/code-quality.md)
 find . -name "*.sh" -type f ! -path "./.git/*" -print0 | xargs -0 shellcheck -x
 ```
 

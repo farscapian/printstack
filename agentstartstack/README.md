@@ -1,32 +1,24 @@
-# agentstartstack
+# agentstartstack (printstack)
 
-Split from the monolithic project docs so agents load only the topics needed for a task.
+Project-specific agent guidance. Generic workflow, nut, conventions, and security live in the **.agentstartstack** submodule.
 
-## Session startup (Grok clone)
+## Session startup
 
-1. **Session sync** -- `scripts/init_grok_session.sh` (see `workflow.md`)
-2. Read this index; load 1-3 topic files relevant to the task
-3. Do not load all files unless doing a broad audit
-
-## Publish (end of session)
-
-1. Commit in the Grok/Claude session clone
-2. **Publish** -- human runs `nut push` (or `nut` then `push`; see `nut.md`)
+1. Run `scripts/init_grok_session.sh` or `scripts/init_claude_session.sh`
+2. Read root `CLAUDE.md`; load 1-3 files from this directory for the task
 
 ## Suggested load patterns
 
 | Task type | Files |
 |-----------|-------|
-| Pi SD card flash / WiFi | `cli.md`, `workflow.md`, `bootstrap.md`, `gotchas.md` |
+| Pi SD flash / WiFi | `cli.md`, `workflow.md`, `bootstrap.md`, `gotchas.md` |
 | Printserver provision / reprovision | `cli.md`, `workflow.md`, `bootstrap.md`, `cloud-init.md` |
 | Incus image rebuild | `bootstrap.md`, `architecture.md` |
 | Cloud-init / nightly reprovision | `cloud-init.md`, `features.md`, `gotchas.md` |
 | TLS / Let's Encrypt | `features.md`, `configuration.md`, `security.md` |
-| New shell script | `conventions.md`, `code-quality.md`, `implementation.md` |
+| New shell script | `.agentstartstack/agentstartstack/conventions.md`, `code-quality.md`, `implementation.md` |
 | Firewall / network / MACVLAN | `architecture.md`, `configuration.md` |
-| CI / commit hygiene | `workflow.md`, `code-quality.md`, `testing.md` |
-| Human Sync handoff | `nut.md`, `workflow.md` |
+| CI / commit hygiene | `.agentstartstack/agentstartstack/workflow.md`, `code-quality.md`, `testing.md` |
+| Human Sync handoff | `.agentstartstack/agentstartstack/nut.md`, `workflow.md` |
 
-## Maintenance
-
-When adding guidance, append to the smallest applicable topic file. Update `CLAUDE.md` index table if adding a new file. Keep cross-references as relative `agentstartstack/*.md` links.
+Append to the smallest applicable file. Update `CLAUDE.md` when adding a new file.

@@ -1,6 +1,7 @@
 # Secrets
 *.env
 !*.env.example
+!.agentstartstack.env
 shared.env
 
 # Ubuntu Pi images (large binary files)
