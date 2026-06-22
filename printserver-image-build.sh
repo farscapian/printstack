@@ -30,7 +30,9 @@ ENV_FILE="${SCRIPT_DIR}/printserver-bootstrap.env"
 [[ -f "$ENV_FILE"   ]] || { echo "ERROR: printserver-bootstrap.env not found: $ENV_FILE" >&2; exit 1; }
 
 set +u
+# shellcheck source=/dev/null
 source "$SHARED_ENV"
+# shellcheck source=/dev/null
 source "$ENV_FILE"
 set -u
 

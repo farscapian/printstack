@@ -376,7 +376,7 @@ if [[ "$FLASH" == true ]]; then
   fi
 
   log "Waiting for $ROOT_PART..."
-  for i in {1..15}; do
+  for _ in {1..15}; do
     [[ -b "$ROOT_PART" ]] && break
     sleep 1
   done
@@ -464,8 +464,8 @@ APTEOF
 
       # Patch brcmfmac NVRAM with ccode=US
       GENERIC=\$(readlink -f /usr/lib/firmware/brcm/brcmfmac43455-sdio.raspberrypi,4-model-b.txt.zst 2>/dev/null)
-      if [ -n "\$GENERIC" ]; then
-        zstd -d "\$GENERIC" -o /tmp/nvram-pi4b.txt
+      if [ -n \"\$GENERIC\" ]; then
+        zstd -d \"\$GENERIC\" -o /tmp/nvram-pi4b.txt
         printf '
 ccode=US
 regrev=0
@@ -490,7 +490,7 @@ fi
 
 # ── Phase 4: Mount boot partition ────────────────────────────────────────────
 log "Waiting for $BOOT_PART..."
-for i in {1..15}; do
+for _ in {1..15}; do
   [[ -b "$BOOT_PART" ]] && break
   sleep 1
 done

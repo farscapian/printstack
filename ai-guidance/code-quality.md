@@ -13,6 +13,9 @@ find . -name "*.sh" -type f ! -path "./.git/*" -print0 | xargs -0 shellcheck -x
 - Before committing any shell script changes
 - When adding new .sh files
 - Periodically as part of code review
+- Automatically on commit if git hooks are installed (`scripts/install-githooks.sh`)
+
+**Pre-commit hook:** gates on `shellcheck -x -S error` (hard failures only). Run the full command above locally before handoff to catch warnings and style notes.
 
 **Key rules we follow:**
 

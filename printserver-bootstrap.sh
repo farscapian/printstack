@@ -185,6 +185,7 @@ log() { echo "[$(date '+%H:%M:%S')] $*"; }
 die() { echo "ERROR: $*" >&2; exit 1; }
 
 # Run a command on the Incus host via SSH (host-level operations only)
+# shellcheck disable=SC2029
 remote() { ssh "$INCUS_REMOTE" "$@"; }
 
 # Push a local file to the Incus host via SSH
@@ -193,6 +194,7 @@ push_file() {
   local remote_dir
   remote_dir=$(dirname "$remote_path")
   remote "mkdir -p '${remote_dir}'"
+  # shellcheck disable=SC2029
   ssh "$INCUS_REMOTE" "cat > '${remote_path}'" < "$local_path"
 }
 
@@ -795,6 +797,7 @@ log "Waiting for USB printers to appear in container..."
       lpinfo -v 2>/dev/null | grep -q "^direct usb://"; then
     log "Printers found — baking lpadmin commands into cloud-init for nightly reprovision..."
 
+    # shellcheck disable=SC2016
     LPADMIN_CMDS=$(incus exec "$CONTAINER_NAME" -- \
       bash -c '
         INDEX=1
@@ -809,8 +812,9 @@ log "Waiting for USB printers to appear in container..."
         [ -n "$FIRST" ] && echo "  - lpoptions -d ${FIRST}"
       ')
 
-    UPDATED_CLOUD_INIT=$(echo "$CLOUD_INIT" | sed \
-      "s|  # Auto-register USB printers\n  - /usr/local/bin/register-printers|  # Auto-register USB printers\n  - sleep 20\n  - /usr/local/bin/register-printers|")
+    register_block=$'  # Auto-register USB printers — best-effort; succeeds even if Pi isn'\''t connected yet\n  - /usr/local/bin/register-printers || true'
+    baked_block=$'  # Auto-register USB printers (baked lpadmin from first provision)\n'"${LPADMIN_CMDS}"
+    UPDATED_CLOUD_INIT="${CLOUD_INIT//$register_block/$baked_block}"
 
     echo "$UPDATED_CLOUD_INIT" > "${SCRIPT_DIR}/cloud-init/printserver-bootstrap/cloud-init.yaml"
     log "Cloud-init updated with printer registration."
@@ -827,6 +831,8 @@ log "Cloud-init pushed."
 # ── Phase 11: Install nightly reprovision timer on Incus host ─────────────────
 log "Installing nightly reprovision timer on ${INCUS_REMOTE}..."
 
+# Client-side expansion bakes bootstrap vars into the remote launch script.
+# shellcheck disable=SC2087
 ssh "$INCUS_REMOTE" "cat > /usr/local/bin/printserver-launch && chmod +x /usr/local/bin/printserver-launch" <<LAUNCH_EOF
 #!/bin/bash
 set -euo pipefail

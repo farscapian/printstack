@@ -185,6 +185,18 @@ git clone git@github.com:farscapian/immutable-usbproxy-and-printserver.git \
   ~/.claude/worktrees/mini-projects-printstack/<session-id>
 ```
 
+## Git hooks (shellcheck)
+
+Install once per clone (Sync repo or session clone):
+
+```bash
+./scripts/install-githooks.sh
+```
+
+This sets `core.hooksPath` to `.githooks` and enables a **pre-commit** hook that runs `shellcheck -x -S error` on staged `.sh` files. Hard errors block the commit; run full `shellcheck -x` manually to catch warnings and style notes (see [code-quality.md](code-quality.md)).
+
+Re-run `install-githooks.sh` after cloning a new session worktree.
+
 ## Git and commit policy
 
 **Agent default:** commit when a task is complete. Human runs `nut` when ready (see [nut.md](nut.md)); `nut` refuses while bootstrap scripts are running (see [Active bootstrap sessions](#3-active-bootstrap-sessions-agents----mandatory)). Never push to origin -- that is human-only.
