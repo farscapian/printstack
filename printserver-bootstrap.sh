@@ -185,17 +185,13 @@ log() { echo "[$(date '+%H:%M:%S')] $*"; }
 die() { echo "ERROR: $*" >&2; exit 1; }
 
 # Run a command on the Incus host via SSH (host-level operations only)
-# shellcheck disable=SC2029
 remote() { ssh "$INCUS_REMOTE" "$@"; }
 
 # Push a local file to the Incus host via SSH
 push_file() {
   local local_path="$1" remote_path="$2"
-  local remote_dir
-  remote_dir=$(dirname "$remote_path")
-  remote "mkdir -p '${remote_dir}'"
-  # shellcheck disable=SC2029
-  ssh "$INCUS_REMOTE" "cat > '${remote_path}'" < "$local_path"
+  ssh "$INCUS_REMOTE" mkdir -p -- "$(dirname "$remote_path")"
+  scp -q "$local_path" "${INCUS_REMOTE}:${remote_path}"
 }
 
 # ── Phase 1: Validate and switch to Incus remote ─────────────────────────────
@@ -231,7 +227,7 @@ fi
 # new launch, claim the same MAC address, and race us to the container name.
 # Phase 11 re-enables the timer unconditionally once the new container is up.
 log "Stopping nightly reprovision timer on ${INCUS_REMOTE} (if present)..."
-ssh "$INCUS_REMOTE" "systemctl stop printserver-reprovision.timer 2>/dev/null || true"
+ssh "$INCUS_REMOTE" systemctl stop printserver-reprovision.timer 2>/dev/null || true
 
 if [[ "$REPROVISION" == true ]]; then
   if incus info "$CONTAINER_NAME" &>/dev/null; then
@@ -797,20 +793,19 @@ log "Waiting for USB printers to appear in container..."
       lpinfo -v 2>/dev/null | grep -q "^direct usb://"; then
     log "Printers found — baking lpadmin commands into cloud-init for nightly reprovision..."
 
-    # shellcheck disable=SC2016
-    LPADMIN_CMDS=$(incus exec "$CONTAINER_NAME" -- \
-      bash -c '
-        INDEX=1
-        while IFS= read -r line; do
-          URI=$(echo "$line" | awk "{print \$2}")
-          NAME=$(echo "$URI" | sed "s|usb://||;s|/|_|g;s|?.*||;s|%20|_|g;s|[^A-Za-z0-9_]||g")
-          NAME="Printer_${INDEX}_${NAME}"
-          echo "  - lpadmin -p ${NAME} -E -v ${URI} -m everywhere -o printer-is-shared=true"
-          INDEX=$((INDEX + 1))
-        done < <(lpinfo -v 2>/dev/null | grep "^direct usb://")
-        FIRST=$(lpstat -d 2>/dev/null | awk "{print \$NF}")
-        [ -n "$FIRST" ] && echo "  - lpoptions -d ${FIRST}"
-      ')
+    LPADMIN_CMDS=$(incus exec "$CONTAINER_NAME" -- bash <<'LPADMIN_EOF'
+INDEX=1
+while IFS= read -r line; do
+  URI=$(echo "$line" | awk '{print $2}')
+  NAME=$(echo "$URI" | sed 's|usb://||;s|/|_|g;s|?.*||;s|%20|_|g;s|[^A-Za-z0-9_]||g')
+  NAME="Printer_${INDEX}_${NAME}"
+  echo "  - lpadmin -p ${NAME} -E -v ${URI} -m everywhere -o printer-is-shared=true"
+  INDEX=$((INDEX + 1))
+done < <(lpinfo -v 2>/dev/null | grep '^direct usb://')
+FIRST=$(lpstat -d 2>/dev/null | awk '{print $NF}')
+[ -n "$FIRST" ] && echo "  - lpoptions -d ${FIRST}"
+LPADMIN_EOF
+)
 
     register_block=$'  # Auto-register USB printers — best-effort; succeeds even if Pi isn'\''t connected yet\n  - /usr/local/bin/register-printers || true'
     baked_block=$'  # Auto-register USB printers (baked lpadmin from first provision)\n'"${LPADMIN_CMDS}"
@@ -831,42 +826,49 @@ log "Cloud-init pushed."
 # ── Phase 11: Install nightly reprovision timer on Incus host ─────────────────
 log "Installing nightly reprovision timer on ${INCUS_REMOTE}..."
 
-# Client-side expansion bakes bootstrap vars into the remote launch script.
-# shellcheck disable=SC2087
-ssh "$INCUS_REMOTE" "cat > /usr/local/bin/printserver-launch && chmod +x /usr/local/bin/printserver-launch" <<LAUNCH_EOF
+read -r -d '' launch_script <<'LAUNCH_EOF' || true
 #!/bin/bash
 set -euo pipefail
-set -x  # debug — remove when stable
+set -x  # debug -- remove when stable
 
-CONTAINER_NAME="${CONTAINER_NAME}"
-PROFILE_NAME="${PROFILE_NAME}"
-IMAGE="${IMAGE}"
-CLOUD_INIT_PATH="${REMOTE_CLOUD_INIT_DIR}/cloud-init.yaml"
-PI_HOST="${USBPROXY_HOST}"
+CONTAINER_NAME="__CONTAINER_NAME__"
+PROFILE_NAME="__PROFILE_NAME__"
+IMAGE="__IMAGE__"
+CLOUD_INIT_PATH="__CLOUD_INIT_PATH__"
+PI_HOST="__PI_HOST__"
 PI_PORT="3240"
 PI_TIMEOUT=10
 
-echo "[\$(date)] Checking Pi USB/IP health at \${PI_HOST}:\${PI_PORT}..."
-if ! timeout "\$PI_TIMEOUT" bash -c \
-    ">/dev/tcp/\${PI_HOST}/\${PI_PORT}" 2>/dev/null; then
-  echo "[\$(date)] ERROR: Pi not reachable — aborting reprovision." >&2
+echo "[$(date)] Checking Pi USB/IP health at ${PI_HOST}:${PI_PORT}..."
+if ! timeout "$PI_TIMEOUT" bash -c \
+    ">/dev/tcp/${PI_HOST}/${PI_PORT}" 2>/dev/null; then
+  echo "[$(date)] ERROR: Pi not reachable -- aborting reprovision." >&2
   echo "printserver-launch: Pi health check failed; reprovision skipped." \
     | systemd-cat -t printserver-launch -p warning
   exit 1
 fi
 
-echo "[\$(date)] Pi healthy. Destroying \${CONTAINER_NAME}..."
-incus delete --force "\$CONTAINER_NAME" 2>/dev/null || true
+echo "[$(date)] Pi healthy. Destroying ${CONTAINER_NAME}..."
+incus delete --force "$CONTAINER_NAME" 2>/dev/null || true
 
-echo "[\$(date)] Launching \${CONTAINER_NAME}..."
-incus launch "\$IMAGE" "\$CONTAINER_NAME" \
-  --profile "\$PROFILE_NAME" \
-  --config "user.user-data=\$(cat "\$CLOUD_INIT_PATH")"
+echo "[$(date)] Launching ${CONTAINER_NAME}..."
+incus launch "$IMAGE" "$CONTAINER_NAME" \
+  --profile "$PROFILE_NAME" \
+  --config "user.user-data=$(cat "$CLOUD_INIT_PATH")"
 
-echo "[\$(date)] \${CONTAINER_NAME} launched."
+echo "[$(date)] ${CONTAINER_NAME} launched."
 LAUNCH_EOF
 
-ssh "$INCUS_REMOTE" "cat > /etc/systemd/system/printserver-reprovision.service" <<SVC_EOF
+launch_script="${launch_script//__CONTAINER_NAME__/${CONTAINER_NAME}}"
+launch_script="${launch_script//__PROFILE_NAME__/${PROFILE_NAME}}"
+launch_script="${launch_script//__IMAGE__/${IMAGE}}"
+launch_script="${launch_script//__CLOUD_INIT_PATH__/${REMOTE_CLOUD_INIT_DIR}/cloud-init.yaml}"
+launch_script="${launch_script//__PI_HOST__/${USBPROXY_HOST}}"
+
+printf '%s' "$launch_script" | ssh "$INCUS_REMOTE" \
+  'cat > /usr/local/bin/printserver-launch && chmod +x /usr/local/bin/printserver-launch'
+
+ssh "$INCUS_REMOTE" 'cat > /etc/systemd/system/printserver-reprovision.service' <<SVC_EOF
 [Unit]
 Description=Nightly printserver container reprovision
 
@@ -875,7 +877,7 @@ Type=oneshot
 ExecStart=/usr/local/bin/printserver-launch
 SVC_EOF
 
-ssh "$INCUS_REMOTE" "cat > /etc/systemd/system/printserver-reprovision.timer" <<TIMER_EOF
+ssh "$INCUS_REMOTE" 'cat > /etc/systemd/system/printserver-reprovision.timer' <<TIMER_EOF
 [Unit]
 Description=Nightly printserver reprovision at 02:30
 
@@ -887,7 +889,8 @@ Persistent=true
 WantedBy=timers.target
 TIMER_EOF
 
-ssh "$INCUS_REMOTE" "systemctl daemon-reload && systemctl enable --now printserver-reprovision.timer"
+ssh "$INCUS_REMOTE" systemctl daemon-reload
+ssh "$INCUS_REMOTE" systemctl enable --now printserver-reprovision.timer
 log "Nightly reprovision timer installed and active."
 
 # ── Summary ───────────────────────────────────────────────────────────────────

@@ -17,7 +17,7 @@ export PRINTSTACK_SESSION_WATCH="${PRINTSTACK_SESSION_WATCH:-${LOGS_DIR}/session
 export ENV_FILE="${ENV_FILE:-${PRINTSTACK_HOME}/.env}"
 
 if [[ -f "$ENV_FILE" ]]; then
-  # shellcheck disable=SC1090
+  # shellcheck source=/dev/null
   source "$ENV_FILE"
 fi
 
